@@ -19,5 +19,5 @@
 - [x] Проект Django
 - [x] PostgreSQL подключение и БД
 - [x] apps: users, storage
-- [ ] AbstractUser
+- [x] AbstractUser
 - [ ] REST API
