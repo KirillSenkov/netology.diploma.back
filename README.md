@@ -18,6 +18,6 @@
 ## Чеклист
 - [x] Проект Django
 - [x] PostgreSQL подключение и БД
-- [ ] apps: users, storage
+- [x] apps: users, storage
 - [ ] AbstractUser
 - [ ] REST API
