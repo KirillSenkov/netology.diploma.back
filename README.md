@@ -21,6 +21,7 @@
 Каждому пользователю автоматически создаётся собственная директория (на основе `username + UUID`).
 
 ## API
+Проверятся активная сессия.<br>
 Для POST/PATCH/DELETE требуется CSRF-токен
 (cookie csrftoken, заголовок X-CSRFToken).<br>
 Получение cookie: GET `/api/auth/csrf/`
@@ -31,20 +32,21 @@ POST `/api/files/upload/`<br>
 - `file` — файл
 - `comment` — строка (опционально)
 
-Проверятся активная сессия.<br>
 Ответ: JSON с информацией о файле.
 ### Получение списка файлов
 GET `/api/files/`<br>
-Проверятся активная сессия.<br>
 Ответ: JSON-массив файлов пользователя.
 ### Удаление файла
 DELETE `/api/files/<id>/`<br>
-Проверятся активная сессия.<br>
 Файл удаляется:
 - из файлового хранилища
 - из базы данных
 
 Ответ: JSON { detail: "File deleted" }.
+### Переименование файла
+PATCH `/api/files/<id>/rename/`<br>
+Формат: `application/json`<br>
+Ответ: JSON { id: 3, original_name: "new_name.txt" }
 
 ## Чеклист
 - [x] Django project
@@ -56,5 +58,6 @@ DELETE `/api/files/<id>/`<br>
 - [x] File list API
 - [x] File delete API
 - [x] Add CSRF-auth
-- [ ] Rename / share
+- [x] File rename API 
+- [ ] Share / download
 - [ ] REST API

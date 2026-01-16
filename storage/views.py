@@ -1,4 +1,5 @@
 import os
+import json
 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseNotAllowed
@@ -89,3 +90,32 @@ def delete_file(request, file_id):
     file_obj.delete()
 
     return JsonResponse({'detail': 'File deleted'})
+
+@require_http_methods(['PATCH'])
+def rename_file(request, file_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    try:
+        file_obj = File.objects.get(id=file_id, owner=request.user)
+    except File.DoesNotExist:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    new_name = payload.get('name')
+    if not new_name:
+        return JsonResponse({'detail': 'Missing name'}, status=400)
+
+    file_obj.original_name = new_name
+    file_obj.save(update_fields=['original_name'])
+
+    return JsonResponse({
+        'id': file_obj.id,
+        'original_name': file_obj.original_name,
+    })
+
+
