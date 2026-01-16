@@ -15,6 +15,20 @@
 5. Запуск сервера:
    - `python manage.py runserver`
 6. Файлы загружаются в папку `storage_data/` по .env.
+Каждому пользователю автоматически создаётся собственная директория (на основе `username + UUID`).
+
+## API
+### Загрузка файла
+POST `/api/files/upload/`
+
+Формат: `multipart/form-data`
+Поля:
+- `file` — файл
+- `comment` — строка (опционально)
+
+Проверятся активная сессия.
+
+Ответ: JSON с информацией о файле.
 
 ## Чеклист
 - [x] Проект Django
@@ -22,4 +36,7 @@
 - [x] apps: users, storage
 - [x] AbstractUser
 - [x] Хранилище для File настроено (STORAGE_ROOT)
+- [x] File upload API
+- [ ] File list API
+- [ ] Delete / rename / share
 - [ ] REST API
