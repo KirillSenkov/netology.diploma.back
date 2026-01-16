@@ -47,6 +47,10 @@ DELETE `/api/files/<id>/`<br>
 PATCH `/api/files/<id>/rename/`<br>
 Формат: `application/json`<br>
 Ответ: JSON { id: 3, original_name: "new_name.txt" }
+### Скачивание файла (по авторизации)
+GET `/api/files/<id>/download/`<br>
+Обычный пользователь может скачивать только свои файлы.<br>
+Администратор — любые.
 ### Спецссылка на файл
 Включить:
 POST `/api/files/<id>/share/`<br>

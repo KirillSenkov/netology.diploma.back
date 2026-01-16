@@ -7,6 +7,7 @@ from .views import (
     enable_share,
     disable_share,
     download_shared,
+    download_file,
 )
 
 urlpatterns = [
@@ -16,5 +17,6 @@ urlpatterns = [
     path('files/<int:file_id>/rename/', rename_file, name='files-rename'),
     path('files/<int:file_id>/share/', enable_share, name='files-share-enable'),
     path('files/<int:file_id>/share/disable/', disable_share, name='files-share-disable'),
+    path('files/<int:file_id>/download/', download_file, name='files-download'),
     path('share/<uuid:token>/', download_shared, name='files-share-download'),
 ]

@@ -121,6 +121,32 @@ def rename_file(request, file_id):
         'original_name': file_obj.original_name,
     })
 
+@require_GET
+def download_file(request, file_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    querry = File.objects.filter(id=file_id)
+    if not request.user.is_admin:
+        querry = querry.filter(owner=request.user)
+
+    file_obj = querry.first()
+    if not file_obj:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    full_path = Path(settings.STORAGE_ROOT) / file_obj.relative_path
+    if not full_path.exists():
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    file_obj.last_downloaded = timezone.now()
+    file_obj.save(update_fields=['last_downloaded'])
+
+    return FileResponse(
+        full_path.open('rb'),
+        as_attachment=True,
+        filename=file_obj.original_name,
+    )
+
 @require_http_methods(['POST']) # т.к. это действие по смыслу,
                                 # а не просто UPDSTE
 def enable_share(request, file_id):
