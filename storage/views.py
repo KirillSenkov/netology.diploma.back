@@ -2,15 +2,13 @@ import os
 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseNotAllowed
-from django.views.decorators.http import require_POST, require_GET
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.utils import timezone
 
 from .models import File
 from .services import make_stored_name, user_storage_dir, write_file
 
 
-@csrf_exempt
 @require_POST
 def upload_file(request):
     if not request.user.is_authenticated:
@@ -69,15 +67,7 @@ def list_files(request):
 
     return JsonResponse(data, safe=False)
 
-import os
-
-from django.http import JsonResponse, HttpResponseNotAllowed
-from django.views.decorators.csrf import csrf_exempt
-
-from .models import File
-
-
-@csrf_exempt
+@require_http_methods(['DELETE'])
 def delete_file(request, file_id):
     if request.method != 'DELETE':
         return HttpResponseNotAllowed(['DELETE'])

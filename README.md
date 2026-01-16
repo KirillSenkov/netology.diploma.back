@@ -21,6 +21,9 @@
 Каждому пользователю автоматически создаётся собственная директория (на основе `username + UUID`).
 
 ## API
+Для POST/PATCH/DELETE требуется CSRF-токен
+(cookie csrftoken, заголовок X-CSRFToken).<br>
+Получение cookie: GET `/api/auth/csrf/`
 ### Загрузка файла
 POST `/api/files/upload/`<br>
 Формат: `multipart/form-data`
@@ -44,13 +47,14 @@ DELETE `/api/files/<id>/`<br>
 Ответ: JSON { detail: "File deleted" }.
 
 ## Чеклист
-- [x] Проект Django
-- [x] PostgreSQL подключение и БД
+- [x] Django project
+- [x] PostgreSQL DB connection
 - [x] apps: users, storage
 - [x] AbstractUser
-- [x] Хранилище для File настроено (STORAGE_ROOT)
+- [x] Storage of File's set (STORAGE_ROOT)
 - [x] File upload API
 - [x] File list API
 - [x] File delete API
+- [x] Add CSRF-auth
 - [ ] Rename / share
 - [ ] REST API
