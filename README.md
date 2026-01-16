@@ -14,10 +14,12 @@
    - `python manage.py migrate`
 5. Запуск сервера:
    - `python manage.py runserver`
+6. Файлы загружаются в папку `storage_data/` по .env.
 
 ## Чеклист
 - [x] Проект Django
 - [x] PostgreSQL подключение и БД
 - [x] apps: users, storage
 - [x] AbstractUser
+- [x] Хранилище для File настроено (STORAGE_ROOT)
 - [ ] REST API
