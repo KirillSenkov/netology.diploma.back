@@ -1,8 +1,11 @@
 import os
+from pathlib import Path
+import uuid
 import json
 
+from django.conf import settings
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed, FileResponse
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.utils import timezone
 
@@ -34,7 +37,7 @@ def upload_file(request):
         relative_path=str(rel_dir) + stored_name,
         size_bytes=uploaded_file.size,
         comment=comment,
-        uploaded=timezone.now(),  # на самом деле auto_now_add сам проставит, но ок
+        uploaded=timezone.now(),
     )
 
     return JsonResponse(
@@ -118,4 +121,69 @@ def rename_file(request, file_id):
         'original_name': file_obj.original_name,
     })
 
+@require_http_methods(['POST']) # т.к. это действие по смыслу,
+                                # а не просто UPDSTE
+def enable_share(request, file_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
 
+    try:
+        file_obj = File.objects.get(id=file_id, owner=request.user)
+    except File.DoesNotExist:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    if not file_obj.share_token:
+        file_obj.share_token = uuid.uuid4()
+
+    file_obj.share_enabled = True
+    file_obj.share_created = timezone.now()
+
+    file_obj.save(update_fields=['share_token', 'share_enabled', 'share_created'])
+
+    url = request.build_absolute_uri(f'/share/{file_obj.share_token}/')
+
+    return JsonResponse({
+        'id': file_obj.id,
+        'share_enabled': file_obj.share_enabled,
+        'share_token': str(file_obj.share_token),
+        'share_url': url,
+    })
+
+@require_http_methods(['POST']) # т.к. это действие по смыслу,
+                                # а не просто UPDSTE
+def disable_share(request, file_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    try:
+        file_obj = File.objects.get(id=file_id, owner=request.user)
+    except File.DoesNotExist:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    file_obj.share_enabled = False
+    file_obj.save(update_fields=['share_enabled'])
+
+    return JsonResponse({
+        'id': file_obj.id,
+        'share_enabled': file_obj.share_enabled,
+    })
+
+@require_http_methods(['GET'])
+def download_shared(request, token):
+    try:
+        file_obj = File.objects.get(share_token=token, share_enabled=True)
+    except File.DoesNotExist:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    full_path = Path(settings.STORAGE_ROOT) / file_obj.relative_path
+    if not full_path.exists():
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    file_obj.last_downloaded = timezone.now()
+    file_obj.save(update_fields=['last_downloaded'])
+
+    return FileResponse(
+        full_path.open('rb'),
+        as_attachment=True,
+        filename=file_obj.original_name,
+    )

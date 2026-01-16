@@ -47,6 +47,16 @@ DELETE `/api/files/<id>/`<br>
 PATCH `/api/files/<id>/rename/`<br>
 Формат: `application/json`<br>
 Ответ: JSON { id: 3, original_name: "new_name.txt" }
+### Спецссылка на файл
+Включить:
+POST `/api/files/<id>/share/`<br>
+Т.к. это действие по смыслу, а не просто UPDSTE<br>
+Выключить:
+POST `/api/files/<id>/share/disable/`<br>
+Т.к. это действие по смыслу, а не просто UPDSTE<br>
+Скачать по спецссылке:<br>
+Активная сессия НЕ проверяется.<br>
+GET `/share/<uuid>/`
 
 ## Чеклист
 - [x] Django project
@@ -59,5 +69,6 @@ PATCH `/api/files/<id>/rename/`<br>
 - [x] File delete API
 - [x] Add CSRF-auth
 - [x] File rename API 
-- [ ] Share / download
+- [x] Share link API
+- [ ] Download with auth API 
 - [ ] REST API
