@@ -6,12 +6,20 @@ import json
 from django.conf import settings
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseNotAllowed, FileResponse
-from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.utils import timezone
+from django.views.decorators.http import (
+    require_POST,
+    require_GET,
+    require_http_methods
+)
 
 from .models import File
-from .services import make_stored_name, user_storage_dir, write_file
-
+from .services import (
+    make_stored_name,
+    user_storage_dir,
+    write_file,
+    get_file_for_user
+)
 
 @require_POST
 def upload_file(request):
@@ -56,7 +64,20 @@ def list_files(request):
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    files = File.objects.filter(owner=request.user).order_by('-uploaded')
+    user_id = request.GET.get('user_id')
+
+    if user_id is not None:
+        if not request.user.is_admin:
+            return JsonResponse({'detail': 'Admin rights required for user_id'}, status=403)
+
+        if not user_id.isdigit():
+            return JsonResponse({'detail': 'Invalid user_id: expected integer'}, status=400)
+
+        files = File.objects.filter(owner_id=int(user_id))
+    else:
+        files = File.objects.filter(owner=request.user)
+
+    files = files.order_by('-uploaded')
 
     data = [
         {
@@ -68,27 +89,20 @@ def list_files(request):
         }
         for f in files
     ]
-
     return JsonResponse(data, safe=False)
 
 @require_http_methods(['DELETE'])
 def delete_file(request, file_id):
-    if request.method != 'DELETE':
-        return HttpResponseNotAllowed(['DELETE'])
-
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    try:
-        file_obj = File.objects.get(id=file_id, owner=request.user)
-    except File.DoesNotExist:
+    file_obj = get_file_for_user(request, file_id)
+    if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    abs_path = file_obj.relative_path
-    full_path = os.path.join(os.getcwd(), 'storage_data', abs_path)
-
-    if os.path.exists(full_path):
-        os.remove(full_path)
+    full_path = user_storage_dir(file_obj.relative_path)
+    if full_path.exists():
+        full_path.unlink()
 
     file_obj.delete()
 
@@ -99,9 +113,8 @@ def rename_file(request, file_id):
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    try:
-        file_obj = File.objects.get(id=file_id, owner=request.user)
-    except File.DoesNotExist:
+    file_obj = get_file_for_user(request, file_id)
+    if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
     try:
@@ -126,15 +139,11 @@ def download_file(request, file_id):
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    querry = File.objects.filter(id=file_id)
-    if not request.user.is_admin:
-        querry = querry.filter(owner=request.user)
-
-    file_obj = querry.first()
+    file_obj = get_file_for_user(request, file_id)
     if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    full_path = Path(settings.STORAGE_ROOT) / file_obj.relative_path
+    full_path = user_storage_dir(file_obj.relative_path)
     if not full_path.exists():
         return JsonResponse({'detail': 'File not found'}, status=404)
 
@@ -147,15 +156,40 @@ def download_file(request, file_id):
         filename=file_obj.original_name,
     )
 
+@require_http_methods(['PATCH'])
+def comment_file(request, file_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    file_obj = get_file_for_user(request, file_id)
+    if not file_obj:
+        return JsonResponse({'detail': 'File not found'}, status=404)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    # comment может быть пустой строкой — разрешим очистку
+    if 'comment' not in payload:
+        return JsonResponse({'detail': 'Missing comment'}, status=400)
+
+    file_obj.comment = payload.get('comment')
+    file_obj.save(update_fields=['comment'])
+
+    return JsonResponse({
+        'id': file_obj.id,
+        'comment': file_obj.comment,
+    })
+
 @require_http_methods(['POST']) # т.к. это действие по смыслу,
                                 # а не просто UPDSTE
 def enable_share(request, file_id):
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    try:
-        file_obj = File.objects.get(id=file_id, owner=request.user)
-    except File.DoesNotExist:
+    file_obj = get_file_for_user(request, file_id)
+    if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
     if not file_obj.share_token:
@@ -181,9 +215,8 @@ def disable_share(request, file_id):
     if not request.user.is_authenticated:
         return JsonResponse({'detail': 'Authentication required'}, status=401)
 
-    try:
-        file_obj = File.objects.get(id=file_id, owner=request.user)
-    except File.DoesNotExist:
+    file_obj = get_file_for_user(request, file_id)
+    if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
     file_obj.share_enabled = False
@@ -201,7 +234,7 @@ def download_shared(request, token):
     except File.DoesNotExist:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    full_path = Path(settings.STORAGE_ROOT) / file_obj.relative_path
+    full_path = user_storage_dir(file_obj.relative_path)
     if not full_path.exists():
         return JsonResponse({'detail': 'File not found'}, status=404)
 

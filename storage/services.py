@@ -16,3 +16,11 @@ def write_file(file_obj, target_path: Path) -> None:
     with target_path.open('wb') as out:
         for chunk in file_obj.chunks():
             out.write(chunk)
+
+def get_file_for_user(request, file_id):
+    querry = File.objects.filter(id=file_id)
+
+    if not request.user.is_admin:
+        querry = querry.filter(owner=request.user)
+
+    return querry.first()
