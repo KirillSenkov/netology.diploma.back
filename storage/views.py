@@ -5,7 +5,12 @@ import json
 
 from django.conf import settings
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponseNotAllowed, FileResponse
+from django.http import (
+    HttpRequest,
+    JsonResponse,
+    HttpResponseNotAllowed,
+    FileResponse
+)
 from django.utils import timezone
 from django.views.decorators.http import (
     require_POST,

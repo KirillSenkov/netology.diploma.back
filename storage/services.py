@@ -1,11 +1,11 @@
 import os
-import uuid
+from uuid import uuid4
 from pathlib import Path
 from django.conf import settings
-
+from .models import File
 def make_stored_name(original_name: str) -> str:
     _, ext = os.path.splitext(original_name)
-    return f'{uuid.uuid4().hex}{ext.lower()}'
+    return f'{uuid4().hex}{ext.lower()}'
 
 def user_storage_dir(storage_rel_path: str) -> Path:
     return Path(settings.STORAGE_ROOT) / storage_rel_path

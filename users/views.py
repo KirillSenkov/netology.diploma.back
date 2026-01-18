@@ -1,10 +1,14 @@
-import json
+from json import loads, JSONDecodeError
 from re import compile as make_regex
-import uuid
+from uuid import uuid4
 
 from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET, require_http_methods
+from django.http import HttpRequest, JsonResponse
+from django.views.decorators.http import (
+    require_GET,
+    require_POST,
+    require_http_methods
+)
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import User
@@ -37,11 +41,11 @@ def validate_password(pw: str) -> list[str]:
     return errors
 
 
-@require_http_methods(['POST'])
+@require_POST
 def register(request: HttpRequest) -> JsonResponse:
     try:
-        payload = json.loads(request.body.decode('utf-8') or '{}')
-    except json.JSONDecodeError:
+        payload = loads(request.body.decode('utf-8') or '{}')
+    except JSONDecodeError:
         return JsonResponse({'detail': 'Invalid JSON'}, status=400)
 
     username = (payload.get('username') or '').strip()
@@ -75,7 +79,7 @@ def register(request: HttpRequest) -> JsonResponse:
     if errors:
         return JsonResponse({'detail': 'Validation error', 'errors': errors}, status=400)
 
-    storage_rel_path = f'{username}_{uuid.uuid4()}/'
+    storage_rel_path = f'{username}_{uuid4()}/'
 
     user = User(
         username=username,
