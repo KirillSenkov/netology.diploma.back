@@ -24,3 +24,14 @@ def get_file_for_user(request, file_id):
         querry = querry.filter(owner=request.user)
 
     return querry.first()
+
+def ensure_storage_root() -> Path:
+    root = Path(settings.STORAGE_ROOT)
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+def ensure_user_storage_dir(storage_rel_path: str) -> Path:
+    root = ensure_storage_root()
+    user_dir = root / storage_rel_path
+    user_dir.mkdir(parents=True, exist_ok=True)
+    return user_dir

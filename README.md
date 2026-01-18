@@ -99,4 +99,5 @@ POST `/api/auth/register/`
 - [x] Download with auth API
 - [x] File comment API
 - [x] Storage REST API
+- [x] User registration API with validation
 - [ ] Users/Auth REST API

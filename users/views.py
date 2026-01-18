@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import User
+from storage.services import ensure_user_storage_dir
 
 USERNAME_RE = make_regex(r'^[A-Za-z][A-Za-z0-9]{3,19}$')
 EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -86,6 +87,7 @@ def register(request: HttpRequest) -> JsonResponse:
 
     user.set_password(password)
     user.save()
+    ensure_user_storage_dir(user.storage_rel_path)
 
     return JsonResponse(
         {

@@ -18,7 +18,8 @@ from .services import (
     make_stored_name,
     user_storage_dir,
     write_file,
-    get_file_for_user
+    get_file_for_user,
+    ensure_user_storage_dir
 )
 
 @require_POST
@@ -29,6 +30,8 @@ def upload_file(request):
     uploaded_file = request.FILES.get('file')
     if not uploaded_file:
         return JsonResponse({'detail': 'Missing file'}, status=400)
+
+    ensure_user_storage_dir(request.user.storage_rel_path)
 
     comment = request.POST.get('comment') or None
 
