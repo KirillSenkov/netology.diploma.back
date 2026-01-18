@@ -69,6 +69,20 @@ PATCH `/api/files/<id>/comment/`
 Ответ: JSON { "comment": "New comment" }  
 Для удаления комментария:
 { "comment": null } | { "comment": "" }
+### CSRF cookie
+GET `/api/auth/csrf/`  
+Печёт cookie `csrftoken` для POST/PATCH/DELETE.
+### Регистрация нового пользователя
+POST `/api/auth/register/`  
+Формат: `application/json`  
+Поля:
+- `username` — строка (4..20, латиница/цифры, первый символ — буква)
+- `full_name` — строка
+- `email` — строка (формат email, не уникален)
+- `password` — строка (>=6, 1 заглавная, 1 цифра, 1 спецсимвол)
+
+Ответ: JSON с данными пользователя.  
+Ошибки: 400 JSON с `errors` с раскладкой по полям.
 
 ## Чеклист
 - [x] Django project
