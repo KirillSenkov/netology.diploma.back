@@ -1,8 +1,14 @@
 import os
 from uuid import uuid4
 from pathlib import Path
+
 from django.conf import settings
+from django.contrib.auth import get_user_model
+
+from users.services import can_manage_files
 from .models import File
+
+User = get_user_model()
 def make_stored_name(original_name: str) -> str:
     _, ext = os.path.splitext(original_name)
     return f'{uuid4().hex}{ext.lower()}'
@@ -18,12 +24,16 @@ def write_file(file_obj, target_path: Path) -> None:
             out.write(chunk)
 
 def get_file_for_user(request, file_id):
-    querry = File.objects.filter(id=file_id)
+    file_obj = File.objects.select_related('owner')\
+        .filter(id=file_id).first()
 
-    if not request.user.is_admin:
-        querry = querry.filter(owner=request.user)
+    if not file_obj:
+        return None
 
-    return querry.first()
+    if can_manage_files(request.user, file_obj.owner):
+        return file_obj
+
+    return None
 
 def ensure_storage_root() -> Path:
     root = Path(settings.STORAGE_ROOT)

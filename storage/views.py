@@ -4,7 +4,6 @@ import uuid
 import json
 
 from django.conf import settings
-from django.shortcuts import render
 from django.http import (
     HttpRequest,
     JsonResponse,
@@ -75,11 +74,15 @@ def list_files(request):
     user_id = request.GET.get('user_id')
 
     if user_id is not None:
-        if not request.user.is_admin:
-            return JsonResponse({'detail': 'Admin rights required for user_id'}, status=403)
-
         if not user_id.isdigit():
             return JsonResponse({'detail': 'Invalid user_id: expected integer'}, status=400)
+
+        target_user = User.objects.filter(id=int(user_id)).first()
+        if not target_user:
+            return JsonResponse({'detail': 'User not found'}, status=404)
+
+        if not can_manage_files(request.user, target_user):
+            return JsonResponse({'detail': 'Forbidden'}, status=403)
 
         files = File.objects.filter(owner_id=int(user_id))
     else:

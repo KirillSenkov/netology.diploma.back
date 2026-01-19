@@ -2,7 +2,7 @@ from json import loads, JSONDecodeError
 from re import compile as make_regex
 from uuid import uuid4
 
-from django.shortcuts import render
+from django.contrib.auth import authenticate, login
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import (
     require_GET,
@@ -103,4 +103,39 @@ def register(request: HttpRequest) -> JsonResponse:
             'storage_rel_path': user.storage_rel_path,
         },
         status=201,
+    )
+
+@require_POST
+def login_view(request: HttpRequest) -> JsonResponse:
+    try:
+        payload = loads(request.body.decode('utf-8') or '{}')
+    except JSONDecodeError:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    username = (payload.get('username') or '').strip()
+    password = payload.get('password') or ''
+
+    if not username or not password:
+        return JsonResponse({'detail': 'Missing username or password'}, status=400)
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return JsonResponse({'detail': 'Invalid credentials'}, status=401)
+
+    login(request, user)
+
+    return JsonResponse(
+        {
+            'detail': 'Login successful',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'full_name': user.full_name,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'is_superuser': user.is_superuser,
+                'is_staff': user.is_staff,
+            },
+        },
+        status=200,
     )
