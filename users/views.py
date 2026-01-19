@@ -13,6 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import User
 from storage.services import ensure_user_storage_dir
+from .services import get_user_rank, get_user_level, can_manage_user
 
 USERNAME_RE = make_regex(r'^[A-Za-z][A-Za-z0-9]{3,19}$')
 EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -139,3 +140,38 @@ def login_view(request: HttpRequest) -> JsonResponse:
         },
         status=200,
     )
+
+@require_GET
+def admin_users_list(request: HttpRequest) -> JsonResponse:
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    actor_level = get_user_level(request.user)
+    if actor_level == 'user':
+        return JsonResponse({'detail': 'Admin rights required'}, status=403)
+
+    qs = User.objects.all().order_by('id')
+
+    actor = request.user
+    actor_id = request.user.id
+
+    data = [
+        {
+            'id': u.id,
+            'username': u.username,
+            'full_name': u.full_name,
+            'email': u.email,
+
+            'is_admin': u.is_admin,
+            'is_staff': u.is_staff,
+            'is_superuser': u.is_superuser,
+
+            'level': get_user_level(u),
+            'rank': get_user_rank(u),
+
+            'storage_rel_path': u.storage_rel_path,
+        }
+        for u in qs if u.id == actor_id or can_manage_user(actor, u)
+    ]
+
+    return JsonResponse(data, safe=False)

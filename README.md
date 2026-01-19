@@ -58,11 +58,11 @@ PATCH `/api/files/<id>/rename/`
 GET `/api/files/<id>/download/`  
 Доступ к чужим файлам аналогично получению списка.  
 ### Спецссылка на файл
-Включить:
+Включить:  
 Доступ к чужим файлам аналогично получению списка.  
 POST `/api/files/<id>/share/`  
 Т.к. это действие по смыслу, а не просто UPDSTE  
-Выключить:
+Выключить:  
 Доступ к чужим файлам аналогично получению списка.  
 POST `/api/files/<id>/share/disable/`  
 Т.к. это действие по смыслу, а не просто UPDSTE  
@@ -92,9 +92,17 @@ POST `/api/auth/register/`
 пользователя и она создается в хранилище на диске.  
 Ответ: JSON с данными пользователя.  
 Ошибки: 400 JSON с `errors` с раскладкой по полям.
+### Админ: список пользователей
+GET `/api/admin/users/`  
+Доступ:
+- `admin → видит user (+ себя)`
+- `senior_admin → видит user + admin (+ себя)`
+- `superuser → видит всех`
+
+Ответ: JSON-массив пользователей, включает `level` и `rank`.
 ### Управление ролями пользователей (admin)
 POST `/api/admin/users/<id>/level/`  
-Формат: `application/json`
+Формат: `application/json`  
 Тело запроса:
 { "level": "user" | "admin" | "senior_admin" | "superuser" }  
 Права:
@@ -118,4 +126,5 @@ POST `/api/admin/users/<id>/level/`
 - [x] File comment API
 - [x] Storage REST API
 - [x] User registration API with validation
-- [ ] Users/Auth REST API
+- [x] Users/Auth REST API
+- [ ] Admin Users Management API
