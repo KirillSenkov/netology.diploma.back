@@ -5,7 +5,7 @@ from .views import (
     login_view,
     admin_users_list,
     admin_user_delete,
-    # admin_user_set_level
+     admin_user_set_level,
 )
 
 urlpatterns = [
@@ -15,6 +15,6 @@ urlpatterns = [
     path('admin/users/', admin_users_list, name='admin-users'),
     path('admin/users/<int:user_id>/', admin_user_delete,
          name='admin-user-delete'),
-    #path('admin/users/<int:user_id>/level/', admin_user_set_level,
-         #name='admin-user-set-level'),
+    path('admin/users/<int:user_id>/level/', admin_user_set_level,
+         name='admin-user-set-level'),
 ]

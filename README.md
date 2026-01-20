@@ -126,7 +126,7 @@ DELETE `/api/admin/users/<id>/`
 Ответ: JSON `{ detail: "User deleted", files_deleted: true|false }`
 
 ### Управление ролями пользователей
-POST `/api/admin/users/<id>/level/`  
+PATCH `/api/admin/users/<id>/level/`  
 Формат: `application/json`  
 Тело запроса:
 { "level": "user" | "admin" | "senior_admin" | "superuser" }  
@@ -134,6 +134,8 @@ POST `/api/admin/users/<id>/level/`
 - admin → user  
 - senior_admin → user, admin  
 - superuser → все
+
+Запрет на изменение роли последнего superuser.
 
 ## Чеклист
 - [x] Django project
@@ -153,6 +155,6 @@ POST `/api/admin/users/<id>/level/`
 - [x] User registration API with validation
 - [x] Users/Auth REST API
 - [x] Add admin users list API
-- [ ] Admin users level API
+- [X] Admin users level API
 - [x] Admin users delete API
-- [ ] Admin Users Management API
+- [x] Admin Users Management API

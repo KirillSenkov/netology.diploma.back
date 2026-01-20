@@ -17,7 +17,9 @@ from .services import (
     get_user_rank,
     get_user_level,
     can_manage_user,
-    can_delete_user
+    can_delete_user,
+    can_change_level,
+    set_user_level
 )
 USERNAME_RE = make_regex(r'^[A-Za-z][A-Za-z0-9]{3,19}$')
 EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -228,6 +230,63 @@ def admin_user_delete(request: HttpRequest, user_id: int) -> JsonResponse:
         {
             'detail': 'User deleted',
             'files_deleted': delete_files
+        },
+        status=200,
+    )
+
+@require_http_methods(['PATCH'])
+def admin_user_set_level(request: HttpRequest, user_id: int) -> JsonResponse:
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    actor = request.user
+    actor_level = get_user_level(actor)
+
+    if actor_level == 'user':
+        return JsonResponse({'detail': 'Admin rights required'}, status=403)
+
+    try:
+        target = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'detail': 'User not found'}, status=404)
+
+    try:
+        payload = loads(request.body.decode('utf-8') or '{}')
+    except JSONDecodeError:
+        return JsonResponse({'detail': 'Invalid JSON'}, status=400)
+
+    new_level = payload.get('level')
+
+    if not new_level:
+        return JsonResponse({'detail': 'Missing level'}, status=400)
+
+    if new_level not in ('user', 'admin', 'senior_admin', 'superuser'):
+        return JsonResponse({'detail': 'Invalid level'}, status=400)
+
+    if not can_change_level(actor, target, new_level):
+        return JsonResponse({'detail': 'Permission denied'}, status=403)
+
+    if target.is_superuser and new_level != 'superuser':
+        superusers_count = User.objects.filter(is_superuser=True).count()
+        if superusers_count < 2:
+            return JsonResponse(
+                {'detail': 'Can\'t remove last superuser'},
+                status=400
+            )
+
+    set_user_level(target, new_level)
+
+    return JsonResponse(
+        {
+            'detail': 'User level updated',
+            'user': {
+                'id': target.id,
+                'username': target.username,
+                'level': get_user_level(target),
+                'is_admin': target.is_admin,
+                'is_staff': target.is_staff,
+                'is_superuser': target.is_superuser,
+            },
         },
         status=200,
     )

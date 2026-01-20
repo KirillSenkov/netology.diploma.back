@@ -93,7 +93,7 @@ def can_change_level(actor: User, target: User, new_level: str) -> bool:
     if actor_rank == 0 and target_rank != new_rank:
         return True
 
-    if actor_rank == 1:
+    if actor_rank == 1: # сеньёр
         return min(target_rank, new_rank) > 1 and target_rank != new_rank
 
     return False
