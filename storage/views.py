@@ -211,7 +211,7 @@ def enable_share(request, file_id):
 
     file_obj.save(update_fields=['share_token', 'share_enabled', 'share_created'])
 
-    url = request.build_absolute_uri(f'/share/{file_obj.share_token}/')
+    url = request.build_absolute_uri(f'/api/share/{file_obj.share_token}/')
 
     return JsonResponse({
         'id': file_obj.id,
