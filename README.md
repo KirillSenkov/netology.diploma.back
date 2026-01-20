@@ -31,7 +31,7 @@ GET `/api/auth/csrf/`
 
 ### Загрузка файла
 POST `/api/files/upload/`  
-Формат: `multipart/form-data`
+Формат: `multipart/form-data`  
 Поля:
 - `file` — файл
 - `comment` — строка (опционально)
