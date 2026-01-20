@@ -155,10 +155,10 @@ PATCH `/api/admin/users/<id>/level/`
 Тело запроса:
 { "level": "user" | "admin" | "senior_admin" | "superuser" }  
 Права:
-- admin → user  
 - senior_admin → user, admin  
 - superuser → все
 
+Поднимать до / опускать со своего уровня имеет право только superuser.  
 Запрет на изменение роли последнего superuser.
 
 ## Чеклист
