@@ -13,7 +13,7 @@ def make_stored_name(original_name: str) -> str:
     _, ext = os.path.splitext(original_name)
     return f'{uuid4().hex}{ext.lower()}'
 
-def user_storage_dir(storage_rel_path: str) -> Path:
+def user_storage_abs_path(storage_rel_path: str) -> Path:
     return Path(settings.STORAGE_ROOT) / storage_rel_path
 
 def write_file(file_obj, target_path: Path) -> None:

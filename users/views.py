@@ -12,9 +12,13 @@ from django.views.decorators.http import (
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import User
-from storage.services import ensure_user_storage_dir
-from .services import get_user_rank, get_user_level, can_manage_user
-
+from storage.services import user_storage_abs_path, ensure_user_storage_dir
+from .services import (
+    get_user_rank,
+    get_user_level,
+    can_manage_user,
+    can_delete_user
+)
 USERNAME_RE = make_regex(r'^[A-Za-z][A-Za-z0-9]{3,19}$')
 EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 @ensure_csrf_cookie
@@ -175,3 +179,55 @@ def admin_users_list(request: HttpRequest) -> JsonResponse:
     ]
 
     return JsonResponse(data, safe=False)
+
+@require_http_methods(['DELETE'])
+def admin_user_delete(request: HttpRequest, user_id: int) -> JsonResponse:
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+    actor_level = get_user_level(request.user)
+    if actor_level == 'user':
+        return JsonResponse({'detail': 'Admin rights required'}, status=403)
+
+    target = User.objects.filter(id=user_id).first()
+    if not target:
+        return JsonResponse({'detail': 'User not found'}, status=404)
+
+    if not can_delete_user(request.user, target):
+        return JsonResponse({'detail': 'Forbidden'}, status=403)
+
+    if target.is_superuser:
+        superusers_count = User.objects.filter(is_superuser=True).count()
+        if superusers_count < 2:
+            return JsonResponse(
+                {'detail': 'Can\'t delete the last superuser'},
+                status=409
+            )
+
+    delete_files = request.GET.get('delete_files') == '1'
+
+    if delete_files:
+        try:
+            root = user_storage_abs_path(target.storage_rel_path)
+            if root.exists():
+                for p in sorted(root.rglob('*'), reverse=True):
+                    if p.is_file():
+                        p.unlink()
+                    else:
+                        p.rmdir()
+                root.rmdir()
+        except Exception:
+            return JsonResponse(
+                {'detail': 'Failed to delete user files'},
+                status=500
+            )
+
+    target.delete()
+
+    return JsonResponse(
+        {
+            'detail': 'User deleted',
+            'files_deleted': delete_files
+        },
+        status=200,
+    )

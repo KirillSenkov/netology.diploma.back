@@ -24,7 +24,11 @@
 Проверятся активная сессия.  
 Для POST/PATCH/DELETE требуется CSRF-токен
 (cookie csrftoken, заголовок X-CSRFToken).  
-Получение cookie: GET `/api/auth/csrf/`
+
+### CSRF cookie
+GET `/api/auth/csrf/`  
+Печёт cookie `csrftoken` для POST/PATCH/DELETE.
+
 ### Загрузка файла
 POST `/api/files/upload/`  
 Формат: `multipart/form-data`
@@ -33,6 +37,7 @@ POST `/api/files/upload/`
 - `comment` — строка (опционально)
 
 Ответ: JSON с информацией о файле.
+
 ### Получение списка файлов
 Доступ к чужим файлам через параметр user_id зависит от уровня:
  - `admin → файлы user`
@@ -41,6 +46,7 @@ POST `/api/files/upload/`
 
 GET `/api/files/[?<user_id>]`  
 Ответ: JSON-массив файлов пользователя.
+
 ### Удаление файла
 Доступ к чужим файлам аналогично получению списка.  
 DELETE `/api/files/<id>/`  
@@ -49,14 +55,17 @@ DELETE `/api/files/<id>/`
 - из базы данных
 
 Ответ: JSON { detail: "File deleted" }.
+
 ### Переименование файла
 Доступ к чужим файлам аналогично получению списка.  
 PATCH `/api/files/<id>/rename/`  
 Формат: `application/json`  
 Ответ: JSON { id: 3, original_name: "new_name.txt" }
+
 ### Скачивание файла (по авторизации)
 GET `/api/files/<id>/download/`  
 Доступ к чужим файлам аналогично получению списка.  
+
 ### Спецссылка на файл
 Включить:  
 Доступ к чужим файлам аналогично получению списка.  
@@ -69,6 +78,7 @@ POST `/api/files/<id>/share/disable/`
 Скачать по спецссылке:  
 Активная сессия НЕ проверяется.  
 GET `/share/<uuid>/`
+
 ### Изменение комментария файла
 Доступ к чужим файлам аналогично получению списка.  
 PATCH `/api/files/<id>/comment/`  
@@ -76,9 +86,7 @@ PATCH `/api/files/<id>/comment/`
 Ответ: JSON { "comment": "New comment" }  
 Для удаления комментария:
 { "comment": null } | { "comment": "" }
-### CSRF cookie
-GET `/api/auth/csrf/`  
-Печёт cookie `csrftoken` для POST/PATCH/DELETE.
+
 ### Регистрация нового пользователя
 POST `/api/auth/register/`  
 Формат: `application/json`  
@@ -92,7 +100,17 @@ POST `/api/auth/register/`
 пользователя и она создается в хранилище на диске.  
 Ответ: JSON с данными пользователя.  
 Ошибки: 400 JSON с `errors` с раскладкой по полям.
-### Админ: список пользователей
+
+## Админ API
+Проверятся активная сессия.  
+Для POST/PATCH/DELETE требуется CSRF-токен
+(cookie csrftoken, заголовок X-CSRFToken).  
+
+### CSRF cookie
+GET `/api/auth/csrf/`  
+Печёт cookie `csrftoken` для POST/PATCH/DELETE.
+
+### Список пользователей
 GET `/api/admin/users/`  
 Доступ:
 - `admin → видит user (+ себя)`
@@ -100,7 +118,14 @@ GET `/api/admin/users/`
 - `superuser → видит всех`
 
 Ответ: JSON-массив пользователей, включает `level` и `rank`.
-### Управление ролями пользователей (admin)
+
+### Удалить пользователя
+DELETE `/api/admin/users/<id>/`  
+Доступ по иерархии ролей (user → 403).  
+Опционально: удалить файлы и папку пользователя — `?delete_files=1`  
+Ответ: JSON `{ detail: "User deleted", files_deleted: true|false }`
+
+### Управление ролями пользователей
 POST `/api/admin/users/<id>/level/`  
 Формат: `application/json`  
 Тело запроса:
@@ -127,4 +152,7 @@ POST `/api/admin/users/<id>/level/`
 - [x] Storage REST API
 - [x] User registration API with validation
 - [x] Users/Auth REST API
+- [x] Add admin users list API
+- [ ] Admin users level API
+- [x] Admin users delete API
 - [ ] Admin Users Management API

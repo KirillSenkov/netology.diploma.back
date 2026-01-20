@@ -20,7 +20,7 @@ from django.views.decorators.http import (
 from .models import File
 from .services import (
     make_stored_name,
-    user_storage_dir,
+    user_storage_abs_path,
     write_file,
     get_file_for_user,
     ensure_user_storage_dir
@@ -41,7 +41,7 @@ def upload_file(request):
 
     stored_name = make_stored_name(uploaded_file.name)
     rel_dir = request.user.storage_rel_path
-    abs_path = user_storage_dir(rel_dir) / stored_name
+    abs_path = user_storage_abs_path(rel_dir) / stored_name
 
     write_file(uploaded_file, abs_path)
 
@@ -111,7 +111,7 @@ def delete_file(request, file_id):
     if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    full_path = user_storage_dir(file_obj.relative_path)
+    full_path = user_storage_abs_path(file_obj.relative_path)
     if full_path.exists():
         full_path.unlink()
 
@@ -154,7 +154,7 @@ def download_file(request, file_id):
     if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    full_path = user_storage_dir(file_obj.relative_path)
+    full_path = user_storage_abs_path(file_obj.relative_path)
     if not full_path.exists():
         return JsonResponse({'detail': 'File not found'}, status=404)
 
@@ -245,7 +245,7 @@ def download_shared(request, token):
     except File.DoesNotExist:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    full_path = user_storage_dir(file_obj.relative_path)
+    full_path = user_storage_abs_path(file_obj.relative_path)
     if not full_path.exists():
         return JsonResponse({'detail': 'File not found'}, status=404)
 
