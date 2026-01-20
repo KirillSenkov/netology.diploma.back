@@ -101,6 +101,30 @@ POST `/api/auth/register/`
 Ответ: JSON с данными пользователя.  
 Ошибки: 400 JSON с `errors` с раскладкой по полям.
 
+### Вход
+POST `/api/auth/login/`  
+Создаёт серверную сессию пользователя.  
+Тело запроса: `{ "username": "user0001", "password": "Pass#1"
+ }`  
+Ответ: 
+`{
+  "detail": "Login successful",
+  "user": {
+    "id": 2,
+    "username": "user1234",
+    "full_name": "Test User",
+    "email": "u@m.l",
+    "is_admin": false,
+    "is_superuser": false,
+    "is_staff": false
+  }
+}`
+
+### Выход
+GET `/api/auth/logout/`  
+Завершает текущую сессию.  
+Ответ: `{ "detail": "Logout successful" }`
+
 ## Админ API
 Проверятся активная сессия.  
 Для POST/PATCH/DELETE требуется CSRF-токен
@@ -158,3 +182,4 @@ PATCH `/api/admin/users/<id>/level/`
 - [X] Admin users level API
 - [x] Admin users delete API
 - [x] Admin Users Management API
+- [x] Users/Auth logout API

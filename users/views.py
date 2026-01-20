@@ -2,7 +2,7 @@ from json import loads, JSONDecodeError
 from re import compile as make_regex
 from uuid import uuid4
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import (
     require_GET,
@@ -146,6 +146,15 @@ def login_view(request: HttpRequest) -> JsonResponse:
         },
         status=200,
     )
+
+@require_GET
+def logout_view(request: HttpRequest) -> JsonResponse:
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Not authenticated'}, status=401)
+
+    logout(request)
+
+    return JsonResponse({'detail': 'Logout successful'}, status=200)
 
 @require_GET
 def admin_users_list(request: HttpRequest) -> JsonResponse:
