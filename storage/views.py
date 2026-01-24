@@ -23,6 +23,7 @@ from .services import (
     user_storage_abs_path,
     write_file,
     get_file_for_user,
+    can_manage_files,
     ensure_user_storage_dir
 )
 
@@ -97,6 +98,7 @@ def list_files(request):
             'size_bytes': f.size_bytes,
             'comment': f.comment,
             'uploaded': f.uploaded.isoformat(),
+            'last_downloaded': f.last_downloaded.isoformat(),
         }
         for f in files
     ]
@@ -206,8 +208,9 @@ def enable_share(request, file_id):
     if not file_obj.share_token:
         file_obj.share_token = uuid.uuid4()
 
-    file_obj.share_enabled = True
-    file_obj.share_created = timezone.now()
+    if not file_obj.share_enabled:
+        file_obj.share_enabled = True
+        file_obj.share_created = timezone.now()
 
     file_obj.save(update_fields=['share_token', 'share_enabled', 'share_created'])
 
