@@ -98,7 +98,7 @@ def list_files(request):
             'size_bytes': f.size_bytes,
             'comment': f.comment,
             'uploaded': f.uploaded.isoformat(),
-            'last_downloaded': f.last_downloaded.isoformat(),
+            'last_downloaded': f.last_downloaded.isoformat() if f.last_downloaded else None,
         }
         for f in files
     ]
@@ -160,12 +160,15 @@ def download_file(request, file_id):
     if not full_path.exists():
         return JsonResponse({'detail': 'File not found'}, status=404)
 
+    mode = request.GET.get('mode', 'download')
+    as_attachment = mode != 'preview'
+
     file_obj.last_downloaded = timezone.now()
     file_obj.save(update_fields=['last_downloaded'])
 
     return FileResponse(
         full_path.open('rb'),
-        as_attachment=True,
+        as_attachment=as_attachment,
         filename=file_obj.original_name,
     )
 
