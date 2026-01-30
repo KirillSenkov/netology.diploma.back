@@ -14,6 +14,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import User
 from storage.services import user_storage_abs_path, ensure_user_storage_dir
 from .services import (
+    validate_password,
     get_user_rank,
     get_user_level,
     can_manage_user,
@@ -27,26 +28,6 @@ EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 @require_GET
 def csrf(request: HttpRequest) -> JsonResponse:
     return JsonResponse({'detail': 'ok'})
-
-def validate_password(pw: str) -> list[str]:
-    errors: list[str] = []
-    if pw is None:
-        return ['Password is required']
-
-    if len(pw) < 6:
-        errors.append('Password must be at least 6 characters')
-
-    if not any(ch.isupper() for ch in pw):
-        errors.append('Password must contain at least one uppercase letter')
-
-    if not any(ch.isdigit() for ch in pw):
-        errors.append('Password must contain at least one digit')
-
-    if not any(not ch.isalnum() for ch in pw):
-        errors.append('Password must contain at least one special character')
-
-    return errors
-
 
 @require_POST
 def register(request: HttpRequest) -> JsonResponse:
@@ -155,6 +136,28 @@ def logout_view(request: HttpRequest) -> JsonResponse:
     logout(request)
 
     return JsonResponse({'detail': 'Logout successful'}, status=200)
+
+@require_GET
+def me_view(request: HttpRequest) -> JsonResponse:
+    if not request.user.is_authenticated:
+        return JsonResponse({'detail': 'Not authenticated'}, status=401)
+
+    user = request.user
+
+    return JsonResponse(
+        {
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'full_name': user.full_name,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'is_superuser': user.is_superuser,
+                'is_staff': user.is_staff,
+            },
+        },
+        status=200,
+    )
 
 @require_GET
 def admin_users_list(request: HttpRequest) -> JsonResponse:

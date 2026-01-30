@@ -1,5 +1,24 @@
 from .models import User
 
+def validate_password(pw: str) -> list[str]:
+    errors: list[str] = []
+    if pw is None:
+        return ['Password is required']
+
+    if len(pw) < 6:
+        errors.append('Password must be at least 6 characters')
+
+    if not any(ch.isupper() for ch in pw):
+        errors.append('Password must contain at least one uppercase letter')
+
+    if not any(ch.isdigit() for ch in pw):
+        errors.append('Password must contain at least one digit')
+
+    if not any(not ch.isalnum() for ch in pw):
+        errors.append('Password must contain at least one special character')
+
+    return errors
+
 def level_to_rank(level_name: str) -> int:
     levels = {
         'user': 3,
