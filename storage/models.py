@@ -21,7 +21,6 @@ class File(models.Model):
     last_downloaded = models.DateTimeField(blank=True, null=True)
 
     share_token = models.UUIDField(unique=True, blank=True, null=True)
-    share_enabled = models.BooleanField(default=False)
     share_created = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):

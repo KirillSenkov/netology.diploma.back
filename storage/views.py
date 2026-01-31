@@ -99,6 +99,8 @@ def list_files(request):
             'comment': f.comment,
             'uploaded': f.uploaded.isoformat(),
             'last_downloaded': f.last_downloaded.isoformat() if f.last_downloaded else None,
+            'share_url': request.build_absolute_uri(f'/api/share/{f.share_token}/') if f.share_token else None,
+            'share_created': f.share_created.isoformat() if f.last_downloaded else None,
         }
         for f in files
     ]
@@ -210,18 +212,14 @@ def enable_share(request, file_id):
 
     if not file_obj.share_token:
         file_obj.share_token = uuid.uuid4()
-
-    if not file_obj.share_enabled:
-        file_obj.share_enabled = True
         file_obj.share_created = timezone.now()
-
-    file_obj.save(update_fields=['share_token', 'share_enabled', 'share_created'])
+        file_obj.save(update_fields=['share_token', 'share_created'])
 
     url = request.build_absolute_uri(f'/api/share/{file_obj.share_token}/')
 
     return JsonResponse({
         'id': file_obj.id,
-        'share_enabled': file_obj.share_enabled,
+        'share_created': file_obj.share_created.isoformat() if file_obj.share_created else None,
         'share_token': str(file_obj.share_token),
         'share_url': url,
     })
@@ -236,18 +234,21 @@ def disable_share(request, file_id):
     if not file_obj:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
-    file_obj.share_enabled = False
-    file_obj.save(update_fields=['share_enabled'])
+    file_obj.share_token = None
+    file_obj.share_created = None
+    file_obj.save(update_fields=['share_token', 'share_created'])
 
     return JsonResponse({
         'id': file_obj.id,
-        'share_enabled': file_obj.share_enabled,
+        'share_url': None,
+        'share_created': None,
+        'share_token': None,
     })
 
 @require_http_methods(['GET'])
 def download_shared(request, token):
     try:
-        file_obj = File.objects.get(share_token=token, share_enabled=True)
+        file_obj = File.objects.get(share_token=token)
     except File.DoesNotExist:
         return JsonResponse({'detail': 'File not found'}, status=404)
 
