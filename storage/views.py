@@ -219,9 +219,9 @@ def enable_share(request, file_id):
 
     return JsonResponse({
         'id': file_obj.id,
+        'share_url': url,
         'share_created': file_obj.share_created.isoformat() if file_obj.share_created else None,
         'share_token': str(file_obj.share_token),
-        'share_url': url,
     })
 
 @require_http_methods(['POST']) # т.к. это действие по смыслу,
