@@ -100,7 +100,7 @@ def list_files(request):
             'uploaded': f.uploaded.isoformat(),
             'last_downloaded': f.last_downloaded.isoformat() if f.last_downloaded else None,
             'share_url': request.build_absolute_uri(f'/api/share/{f.share_token}/') if f.share_token else None,
-            'share_created': f.share_created.isoformat() if f.last_downloaded else None,
+            'share_created': f.share_created.isoformat() if f.share_created else None,
         }
         for f in files
     ]
