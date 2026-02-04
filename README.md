@@ -35,7 +35,6 @@ POST `/api/files/upload/`
 Поля:
 - `file` — файл
 - `comment` — строка (опционально)
-
 Ответ: JSON с информацией о файле.
 
 ### Получение списка файлов
@@ -43,7 +42,6 @@ POST `/api/files/upload/`
  - `admin → файлы user`
  - `senior_admin → файлы user и admin`
  - `superuser → любые файлы`
-
 GET `/api/files/[?<user_id>]`  
 Ответ: JSON-массив файлов пользователя.
 
@@ -53,7 +51,6 @@ DELETE `/api/files/<id>/`
 Файл удаляется:
 - из файлового хранилища
 - из базы данных
-
 Ответ: JSON { detail: "File deleted" }.
 
 ### Переименование файла
@@ -95,7 +92,6 @@ POST `/api/auth/register/`
 - `full_name` — строка
 - `email` — строка (формат email, не уникален)
 - `password` — строка (>=6, 1 заглавная, 1 цифра, 1 спецсимвол)
-
 При регистрации автоматически генерируется относительный путь для папки 
 пользователя и она создается в хранилище на диске.  
 Ответ: JSON с данными пользователя.  
@@ -111,12 +107,14 @@ POST `/api/auth/login/`
   "detail": "Login successful",
   "user": {
     "id": 2,
-    "username": "user1234",
+    "username": "user0001",
     "full_name": "Test User",
     "email": "u@m.l",
     "is_admin": false,
     "is_superuser": false,
-    "is_staff": false
+    "is_staff": false,
+    "level": "user",
+    "rank": 3
   }
 }`
 
@@ -140,7 +138,6 @@ GET `/api/admin/users/`
 - `admin → видит user (+ себя)`
 - `senior_admin → видит user + admin (+ себя)`
 - `superuser → видит всех`
-
 Ответ: JSON-массив пользователей, включает `level` и `rank`.
 
 ### Удалить пользователя
@@ -148,6 +145,7 @@ DELETE `/api/admin/users/<id>/`
 Доступ по иерархии ролей (user → 403).  
 Опционально: удалить файлы и папку пользователя — `?delete_files=1`  
 Ответ: JSON `{ detail: "User deleted", files_deleted: true|false }`
+Запрет на удаление последнего superuser.
 
 ### Управление ролями пользователей
 PATCH `/api/admin/users/<id>/level/`  
@@ -157,7 +155,6 @@ PATCH `/api/admin/users/<id>/level/`
 Права:
 - senior_admin → user, admin  
 - superuser → все
-
 Поднимать до / опускать со своего уровня имеет право только superuser.  
 Запрет на изменение роли последнего superuser.
 

@@ -27,6 +27,8 @@ from .services import (
     ensure_user_storage_dir
 )
 
+from users.models import User
+
 @require_POST
 def upload_file(request):
     if not request.user.is_authenticated:

@@ -22,6 +22,10 @@ from .services import (
     can_change_level,
     set_user_level
 )
+
+from django.db.models import Count, Sum, Case, When, Value, IntegerField
+from django.db.models.functions import Coalesce, Lower
+
 USERNAME_RE = make_regex(r'^[A-Za-z][A-Za-z0-9]{3,19}$')
 EMAIL_RE = make_regex(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 @ensure_csrf_cookie
@@ -87,7 +91,6 @@ def register(request: HttpRequest) -> JsonResponse:
             'username': user.username,
             'full_name': user.full_name,
             'email': user.email,
-            'is_admin': user.is_admin,
             'storage_rel_path': user.storage_rel_path,
         },
         status=201,
@@ -123,6 +126,8 @@ def login_view(request: HttpRequest) -> JsonResponse:
                 'is_admin': user.is_admin,
                 'is_superuser': user.is_superuser,
                 'is_staff': user.is_staff,
+                'level': get_user_level(u),
+                'rank': get_user_rank(u),
             },
         },
         status=200,
@@ -154,6 +159,8 @@ def me_view(request: HttpRequest) -> JsonResponse:
                 'is_admin': user.is_admin,
                 'is_superuser': user.is_superuser,
                 'is_staff': user.is_staff,
+                'level': get_user_level(user),
+                'rank': get_user_rank(user),
             },
         },
         status=200,
@@ -168,10 +175,31 @@ def admin_users_list(request: HttpRequest) -> JsonResponse:
     if actor_level == 'user':
         return JsonResponse({'detail': 'Admin rights required'}, status=403)
 
-    qs = User.objects.all().order_by('id')
-
     actor = request.user
-    actor_id = request.user.id
+
+    qs = User.objects.all()
+
+    manageable_ids = [u.id for u in qs if u.id == actor.id or can_manage_user(
+        actor, u)]
+
+    # querry set of manageable users with metadata of their files agregated:
+    # files count and total bytes of them
+    # in orded by "the actor's goeing first,
+    # the rest are goein with lower username order"
+    qs2 = (
+        User.objects
+        .filter(id__in=manageable_ids)
+        .annotate(
+            files_count=Count('files', distinct=True),
+            total_space=Coalesce(Sum('files__size_bytes'), 0),
+            is_actor=Case(
+                When(id=actor.id, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField()
+            )
+        )
+        .order_by('is_actor', Lower('username'))
+    )
 
     data = [
         {
@@ -188,8 +216,11 @@ def admin_users_list(request: HttpRequest) -> JsonResponse:
             'rank': get_user_rank(u),
 
             'storage_rel_path': u.storage_rel_path,
+
+            'files_count': u.files_count,
+            'total_storage_bytes': u.total_space,
         }
-        for u in qs if u.id == actor_id or can_manage_user(actor, u)
+        for u in qs2
     ]
 
     return JsonResponse(data, safe=False)
@@ -295,6 +326,7 @@ def admin_user_set_level(request: HttpRequest, user_id: int) -> JsonResponse:
                 'id': target.id,
                 'username': target.username,
                 'level': get_user_level(target),
+                'rank': get_user_rank(target),
                 'is_admin': target.is_admin,
                 'is_staff': target.is_staff,
                 'is_superuser': target.is_superuser,
